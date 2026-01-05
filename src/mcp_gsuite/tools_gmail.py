@@ -452,6 +452,46 @@ class GetAttachmentToolHandler(toolhandler.ToolHandler):
             )
         ]
 
+class ArchiveEmailToolHandler(toolhandler.ToolHandler):
+    def __init__(self):
+        super().__init__("archive_gmail_email")
+
+    def get_tool_description(self) -> Tool:
+        return Tool(
+            name=self.name,
+            description="Archives a Gmail email by removing it from the inbox. The email will still be accessible in 'All Mail'.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "__user_id__": self.get_user_id_arg_schema(),
+                    "email_id": {
+                        "type": "string",
+                        "description": "The ID of the Gmail message to archive"
+                    }
+                },
+                "required": ["email_id", toolhandler.USER_ID_ARG]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        if "email_id" not in args:
+            raise RuntimeError("Missing required argument: email_id")
+
+        user_id = args.get(toolhandler.USER_ID_ARG)
+        if not user_id:
+            raise RuntimeError(f"Missing required argument: {toolhandler.USER_ID_ARG}")
+
+        gmail_service = gmail.GmailService(user_id=user_id)
+        success = gmail_service.archive_email(args["email_id"])
+
+        return [
+            TextContent(
+                type="text",
+                text="Successfully archived email" if success else f"Failed to archive email with ID: {args['email_id']}"
+            )
+        ]
+
+
 class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
     def __init__(self):
         super().__init__("bulk_save_gmail_attachments")

@@ -378,11 +378,11 @@ class GmailService():
     def get_attachment(self, message_id: str, attachment_id: str) -> dict | None:
         """
         Retrieves a Gmail attachment by its ID.
-        
+
         Args:
             message_id (str): The ID of the Gmail message containing the attachment
             attachment_id (str): The ID of the attachment to retrieve
-        
+
         Returns:
             dict: Attachment data including filename and base64-encoded content
             None: If retrieval fails
@@ -390,15 +390,38 @@ class GmailService():
         try:
             attachment = self.service.users().messages().attachments().get(
                 userId='me',
-                messageId=message_id, 
+                messageId=message_id,
                 id=attachment_id
             ).execute()
             return {
                 "size": attachment.get("size"),
                 "data": attachment.get("data")
             }
-            
+
         except Exception as e:
             logging.error(f"Error retrieving attachment {attachment_id} from message {message_id}: {str(e)}")
             logging.error(traceback.format_exc())
             return None
+
+    def archive_email(self, email_id: str) -> bool:
+        """
+        Archives an email by removing the INBOX label.
+
+        Args:
+            email_id (str): The Gmail message ID to archive
+
+        Returns:
+            bool: True if archiving was successful, False otherwise
+        """
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'removeLabelIds': ['INBOX']}
+            ).execute()
+            return True
+
+        except Exception as e:
+            logging.error(f"Error archiving email {email_id}: {str(e)}")
+            logging.error(traceback.format_exc())
+            return False
